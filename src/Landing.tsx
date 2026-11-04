@@ -1,9 +1,97 @@
-import { useEffect } from 'react'
+import { useEffect, type MouseEvent } from 'react'
 import { ArrowRight, Check, Infinity as InfinityIcon, ShieldCheck, Zap } from 'lucide-react'
 import { motion, MotionConfig, type MotionProps, type Variants } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import DataFlowAnimation from './DataFlowAnimation'
+
+const LEMON_SCRIPT_SRC = 'https://assets.lemonsqueezy.com/lemon.js'
+
+export const LEMON_CHECKOUT_URL =
+  'https://adrybyte.lemonsqueezy.com/checkout/buy/94fc794f-3d3d-4df9-a65b-1084ec19ea6c?embed=1'
+
+let lemonSqueezyPromise: Promise<void> | null = null
+
+export function ensureLemonSqueezy(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  if (lemonSqueezyPromise) return lemonSqueezyPromise
+
+  if (window.LemonSqueezy) {
+    lemonSqueezyPromise = Promise.resolve()
+    return lemonSqueezyPromise
+  }
+
+  if (window.createLemonSqueezy) {
+    window.createLemonSqueezy()
+    lemonSqueezyPromise = Promise.resolve()
+    return lemonSqueezyPromise
+  }
+
+  lemonSqueezyPromise = new Promise<void>((resolve) => {
+    let settled = false
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${LEMON_SCRIPT_SRC}"]`,
+    )
+    const script = existing ?? document.createElement('script')
+
+    const finish = (loaded: boolean) => {
+      if (settled) return
+
+      settled = true
+      window.clearTimeout(timeoutId)
+      script.removeEventListener('load', handleLoad)
+      script.removeEventListener('error', handleError)
+
+      if (loaded) {
+        if (!window.LemonSqueezy) window.createLemonSqueezy?.()
+      } else {
+        lemonSqueezyPromise = null
+        if (!existing) script.remove()
+      }
+
+      resolve()
+    }
+
+    const handleLoad = () => finish(true)
+    const handleError = () => finish(false)
+    const timeoutId = window.setTimeout(() => finish(false), 8_000)
+
+    if (existing && window.createLemonSqueezy) {
+      finish(true)
+      return
+    }
+
+    script.addEventListener('load', handleLoad)
+    script.addEventListener('error', handleError)
+
+    if (!existing) {
+      script.src = LEMON_SCRIPT_SRC
+      script.async = true
+      document.body.appendChild(script)
+    }
+  })
+
+  return lemonSqueezyPromise
+}
+
+export function openLemonCheckout(url: string = LEMON_CHECKOUT_URL): void {
+  if (typeof window === 'undefined') return
+
+  if (window.LemonSqueezy?.Url) {
+    window.LemonSqueezy.Url.Open(url)
+    return
+  }
+
+  void ensureLemonSqueezy().then(() => {
+    if (window.LemonSqueezy?.Url) {
+      window.LemonSqueezy.Url.Open(url)
+      return
+    }
+
+    const opened = window.open(url, '_blank', 'noopener,noreferrer')
+    if (!opened) window.location.assign(url)
+  })
+}
 
 const FEATURES = [
   {
@@ -63,10 +151,19 @@ export default function Landing() {
   const { t } = useTranslation()
 
   useEffect(() => {
+    void ensureLemonSqueezy()
+  }, [])
+
+  useEffect(() => {
     if (window.location.hash === '#pricing') {
       document.getElementById('pricing')?.scrollIntoView({ block: 'start' })
     }
   }, [])
+
+  const handleCheckout = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    openLemonCheckout()
+  }
 
   return (
     <MotionConfig reducedMotion="user">
@@ -95,7 +192,7 @@ export default function Landing() {
                   </motion.p>
 
                   <motion.div variants={HERO_ITEM} className="mt-8">
-                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                       <Link
                         to="/app"
                         className="inline-flex h-10 items-center gap-1.5 rounded-md bg-slate-900 px-5 text-sm font-medium text-white transition-colors duration-150 hover:bg-slate-800 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:focus-visible:outline-slate-500"
@@ -110,6 +207,14 @@ export default function Landing() {
                       >
                         {t('LandingTryDemo')}
                       </Link>
+
+                      <a
+                        href={LEMON_CHECKOUT_URL}
+                        onClick={handleCheckout}
+                        className="inline-flex h-10 items-center justify-center rounded-md px-1 text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 transition-colors duration-150 hover:text-slate-900 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:text-slate-200 dark:decoration-slate-700 dark:hover:text-slate-50 dark:focus-visible:outline-slate-600"
+                      >
+                        {t('hero.ctaBuy')}
+                      </a>
                     </div>
 
                     <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
@@ -195,12 +300,13 @@ export default function Landing() {
                 </div>
 
                 <div className="px-6 py-5">
-                  <button
-                    type="button"
+                  <a
+                    href={LEMON_CHECKOUT_URL}
+                    onClick={handleCheckout}
                     className="inline-flex h-10 w-full items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-slate-800 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:focus-visible:outline-slate-500"
                   >
                     {t('BuyLicense')}
-                  </button>
+                  </a>
 
                   <ul className="mt-5 space-y-2.5 border-t border-slate-200 pt-5 dark:border-slate-800">
                     {BENEFITS.map((key) => (

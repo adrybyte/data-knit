@@ -15,7 +15,7 @@
   "UnlockRefunded": "This license has been refunded and is no longer valid.",
   "UnlockVerificationError": "Could not verify the license. Please try again.",
   "UnlockSuccess": "License activated",
-  "UnlockLocalNote": "Your license key is sent to Gumroad only to verify it, then stored in this browser.",
+  "UnlockLocalNote": "Your license key is sent to Lemon Squeezy only to verify it, then stored in this browser.",
   "BackToHome": "Back to home",
   "MainCsv": "Main CSV",
   "DataToMergeCsv": "Data to Merge CSV",

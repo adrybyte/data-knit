@@ -9,17 +9,10 @@ import {
 } from 'react'
 
 export const LICENSE_STORAGE_KEY = 'app_license_key'
+export const LICENSE_STATUS_STORAGE_KEY = 'app_is_licensed'
 
-const GUMROAD_VERIFY_URL = 'https://api.gumroad.com/v2/licenses/verify'
-const GUMROAD_PRODUCT_ID =
-  import.meta.env.VITE_GUMROAD_PRODUCT_ID?.trim() || 'TU_PRODUCT_ID'
+const VERIFY_ENDPOINT = '/api/verify'
 const VERIFY_TIMEOUT_MS = 15_000
-
-if (import.meta.env.DEV && GUMROAD_PRODUCT_ID === 'TU_PRODUCT_ID') {
-  console.warn(
-    '[license] Set VITE_GUMROAD_PRODUCT_ID in your .env file to verify real Gumroad licenses.',
-  )
-}
 
 export type LicenseVerificationFailure =
   | 'empty'
@@ -39,13 +32,9 @@ export type LicenseContextValue = {
   verifyLicense: (key: string) => Promise<LicenseVerificationResult>
 }
 
-type GumroadVerifyResponse = {
+type VerifyLicenseResponse = {
   success?: boolean
-  purchase?: {
-    refunded?: boolean
-    chargebacked?: boolean
-    disputed?: boolean
-  }
+  message?: string
 }
 
 const LicenseContext = createContext<LicenseContextValue | null>(null)
@@ -60,11 +49,22 @@ function readStoredLicenseKey(): string {
   }
 }
 
-function storeLicenseKey(key: string) {
+function hasStoredLicenseStatus(): boolean {
+  if (typeof window === 'undefined') return false
+
+  try {
+    return window.localStorage.getItem(LICENSE_STATUS_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function storeLicense(key: string) {
   if (typeof window === 'undefined') return
 
   try {
     window.localStorage.setItem(LICENSE_STORAGE_KEY, key)
+    window.localStorage.setItem(LICENSE_STATUS_STORAGE_KEY, 'true')
   } catch {
     /* La licencia queda activa solo para esta sesión. */
   }
@@ -82,6 +82,11 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     if (storedKey) {
       setLicenseKey(storedKey)
       setIsLicensed(true)
+
+      // Compatibilidad con sesiones creadas antes de guardar el estado.
+      if (!hasStoredLicenseStatus()) {
+        storeLicense(storedKey)
+      }
     }
 
     setIsLoading(false)
@@ -100,16 +105,13 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       let response: Response
 
       try {
-        response = await fetch(GUMROAD_VERIFY_URL, {
+        response = await fetch(VERIFY_ENDPOINT, {
           method: 'POST',
           headers: {
             Accept: 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
           },
-          body: new URLSearchParams({
-            product_id: GUMROAD_PRODUCT_ID,
-            license_key: normalizedKey,
-          }).toString(),
+          body: JSON.stringify({ licenseKey: normalizedKey }),
           signal: controller.signal,
         })
       } catch {
@@ -118,20 +120,19 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         window.clearTimeout(timeoutId)
       }
 
-      let payload: GumroadVerifyResponse | null = null
+      let payload: VerifyLicenseResponse | null = null
 
       try {
-        payload = (await response.json()) as GumroadVerifyResponse
+        payload = (await response.json()) as VerifyLicenseResponse
       } catch {
         /* La respuesta no era JSON; se resuelve con el estado HTTP. */
       }
 
-      if (!response.ok) {
-        // Gumroad devuelve 404 cuando la licencia no existe para el producto.
-        if ([400, 404, 422].includes(response.status)) {
-          return { valid: false, reason: 'invalid' }
-        }
+      if (response.status === 400) {
+        return { valid: false, reason: 'invalid' }
+      }
 
+      if (!response.ok) {
         return { valid: false, reason: 'request' }
       }
 
@@ -143,19 +144,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         return { valid: false, reason: 'invalid' }
       }
 
-      if (!payload.purchase) {
-        return { valid: false, reason: 'request' }
-      }
-
-      if (
-        payload.purchase.refunded === true ||
-        payload.purchase.chargebacked === true ||
-        payload.purchase.disputed === true
-      ) {
-        return { valid: false, reason: 'refunded' }
-      }
-
-      storeLicenseKey(normalizedKey)
+      storeLicense(normalizedKey)
       setLicenseKey(normalizedKey)
       setIsLicensed(true)
 

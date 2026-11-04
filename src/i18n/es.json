@@ -15,7 +15,7 @@
   "UnlockRefunded": "Esta licencia ha sido reembolsada y ya no es válida.",
   "UnlockVerificationError": "No se pudo verificar la licencia. Inténtalo de nuevo.",
   "UnlockSuccess": "Licencia activada",
-  "UnlockLocalNote": "Tu clave se envía a Gumroad solo para verificarla y luego se guarda en este navegador.",
+  "UnlockLocalNote": "Tu clave se envía a Lemon Squeezy solo para verificarla y luego se guarda en este navegador.",
   "BackToHome": "Volver al inicio",
   "MainCsv": "CSV principal",
   "DataToMergeCsv": "CSV para fusionar",

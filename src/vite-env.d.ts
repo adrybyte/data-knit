@@ -1,9 +1,13 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_GUMROAD_PRODUCT_ID?: string
+interface LemonSqueezyApi {
+  Url: {
+    Open: (url: string) => void
+    Close: () => void
+  }
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+interface Window {
+  createLemonSqueezy?: () => void
+  LemonSqueezy?: LemonSqueezyApi
 }

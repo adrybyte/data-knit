@@ -7,7 +7,7 @@
 ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare_Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white)
-![License](https://img.shields.io/badge/Monetization-Lemon_Squeezy_/_Gumroad-yellow?style=flat-square)
+![License](https://img.shields.io/badge/Monetization-Lemon_Squeezy-yellow?style=flat-square)
 
 ---
 
@@ -61,7 +61,7 @@ MergeCore combines a **Local-First Processing Engine** with **Edge-Based License
 *   **Internationalization:** `react-i18next` (JSON-based dictionary architecture)
 *   **Routing & Guards:** React Router v6 + Custom Context License Guard
 *   **Edge Auth & Hosting:** Cloudflare Pages Functions + HTTP-only Cookie Verification
-*   **Payment Gateway:** Lemon Squeezy / Gumroad (Merchant of Record integration)
+*   **Payment Gateway:** Lemon Squeezy (Merchant of Record integration)
 
 ---
 
@@ -117,19 +117,24 @@ Install dependencies:
 Bash
 npm install
 Configure environment variables:
-Create a .env.local file in the root directory:
+Create a `.dev.vars` file in the root directory for local Pages Functions testing, or add the variable in the Cloudflare Pages dashboard:
 
-Fragmento de código
+```env
 LEMON_SQUEEZY_API_KEY=your_lemon_squeezy_api_key_here
-LEMON_SQUEEZY_STORE_ID=your_store_id
+```
+
 Run development server:
 
-Bash
+```bash
 npm run dev
-Build for production & test edge bundle:
+```
 
-Bash
+Build for production and test the Pages Functions bundle locally:
+
+```bash
 npm run build
+npx wrangler pages dev dist
+```
 Immediate Growth & Scalability Opportunities for Acquirers
 B2B Outbound Campaigns: Cold outreach to mid-sized accounting, HR, and legal firms emphasizing HIPAA/GDPR compliance.
 

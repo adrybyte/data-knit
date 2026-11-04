@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Lock, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { ensureLemonSqueezy, openLemonCheckout } from './Landing'
 import { DEMO_PREVIEW_ROW_LIMIT } from './useCsvParser'
 
 type DemoExportModalProps = {
@@ -15,6 +16,12 @@ export default function DemoExportModal({ open, onClose }: DemoExportModalProps)
   const navigate = useNavigate()
   const dialogRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    void ensureLemonSqueezy()
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -109,7 +116,7 @@ export default function DemoExportModal({ open, onClose }: DemoExportModalProps)
             type="button"
             onClick={() => {
               onClose()
-              navigate('/#pricing')
+              openLemonCheckout()
             }}
             className="inline-flex h-10 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-slate-800 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:focus-visible:outline-slate-500"
           >
